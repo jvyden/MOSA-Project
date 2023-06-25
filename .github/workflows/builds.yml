@@ -5,7 +5,7 @@ on:
   pull_request:
 
 env:
-  BUILD_VERSION: 2.4.0.10007
+  BUILD_VERSION: 2.4.0.10008
 
 jobs:
 
