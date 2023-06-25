@@ -361,7 +361,7 @@ internal class ClrMetadataResolver
 		Debug.Assert(desc.Signature.GetParamCount() + (desc.Signature.HasThis ? 1 : 0) == desc.Definition?.Parameters.Count);
 		foreach (var param in desc.Definition.Parameters)
 		{
-			if (!param.IsNormalMethodParameter || !param.HasParamDef)
+			if (!param.IsNormalMethodParameter)
 				continue;
 			var paramType = metadata.Loader.GetType(resolver.Resolve(desc.Signature.Params[param.MethodSigIndex]));
 			var parameter = metadata.Controller.CreateParameter();
