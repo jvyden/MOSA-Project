@@ -101,9 +101,9 @@ internal class ClrMetadataResolver
 					}
 				case MosaMethod method:
 					{
-						if (method.DeclaringType!.Namespace.StartsWith("System.Runtime.CompilerServices"))
+						if (method.DeclaringType.Namespace.StartsWith("System.Runtime.CompilerServices"))
 						{
-							Console.WriteLine($"{method.DeclaringType!.Namespace} {method.DeclaringType!.Name}::{method.Name} - RUN FOR YOUR LIVES");
+							Console.WriteLine($"{method.DeclaringType.Namespace} {method.DeclaringType.Name}::{method.Name} - RUN FOR YOUR LIVES");
 							continue;
 						}
 
