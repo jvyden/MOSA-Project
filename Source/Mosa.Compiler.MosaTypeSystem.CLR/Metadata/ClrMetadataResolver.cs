@@ -101,6 +101,12 @@ internal class ClrMetadataResolver
 					}
 				case MosaMethod method:
 					{
+						if (method.DeclaringType!.Namespace == "System.Runtime.CompilerServices" && method.DeclaringType!.Name == "NullableAttribute")
+						{
+							Console.WriteLine($"{method.DeclaringType!.Namespace} {method.DeclaringType!.Name}::{method.Name} - RUN FOR YOUR LIVES");
+							continue;
+						}
+
 						try
 						{
 							ResolveMethod(method);
