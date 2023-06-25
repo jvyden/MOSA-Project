@@ -121,6 +121,9 @@ internal class ClrMetadataLoader
 
 			foreach (var methodDef in typeDef.Methods)
 			{
+				if(methodDef.DeclaringType.Name == "NullableAttribute" || methodDef.DeclaringType.Name == "NullableContextAttribute")
+					continue;
+
 				var mosaMethod = metadata.Controller.CreateMethod();
 
 				using (var method = metadata.Controller.MutateMethod(mosaMethod))
