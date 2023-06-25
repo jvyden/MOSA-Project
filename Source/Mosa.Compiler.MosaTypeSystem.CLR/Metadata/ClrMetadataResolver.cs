@@ -361,7 +361,7 @@ internal class ClrMetadataResolver
 		Debug.Assert(desc.Signature.GetParamCount() + (desc.Signature.HasThis ? 1 : 0) == desc.Definition?.Parameters.Count);
 		foreach (var param in desc.Definition.Parameters)
 		{
-			if (!param.IsNormalMethodParameter || !param.HasParamDef)
+			if (!param.IsNormalMethodParameter)
 				continue;
 			var paramType = metadata.Loader.GetType(resolver.Resolve(desc.Signature.Params[param.MethodSigIndex]));
 			var parameter = metadata.Controller.CreateParameter();
@@ -369,10 +369,18 @@ internal class ClrMetadataResolver
 			using (var mosaParameter = metadata.Controller.MutateParameter(parameter))
 			{
 				mosaParameter.Name = param.Name;
-				mosaParameter.ParameterAttributes = (MosaParameterAttributes)param.ParamDef.Attributes;
 				mosaParameter.ParameterType = paramType;
 				mosaParameter.DeclaringMethod = method;
-				ResolveCustomAttributes(mosaParameter, param.ParamDef);
+
+				if (param.HasParamDef)
+				{
+					mosaParameter.ParameterAttributes = (MosaParameterAttributes)param.ParamDef.Attributes;
+					ResolveCustomAttributes(mosaParameter, param.ParamDef);
+				}
+				else
+				{
+					mosaParameter.ParameterAttributes = MosaParameterAttributes.In;
+				}
 			}
 
 			pars.Add(parameter);
