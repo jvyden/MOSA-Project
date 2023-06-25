@@ -107,7 +107,8 @@ internal class ClrMetadataResolver
 						}
 						catch
 						{
-							Console.WriteLine(method.FullName);
+							Debugger.Break();
+							Console.WriteLine(method.DeclaringType.FullName + "::" + method.Name);
 							throw;
 						}
 						break;
