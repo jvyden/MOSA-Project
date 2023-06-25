@@ -101,7 +101,15 @@ internal class ClrMetadataResolver
 					}
 				case MosaMethod method:
 					{
-						ResolveMethod(method);
+						try
+						{
+							ResolveMethod(method);
+						}
+						catch
+						{
+							Console.WriteLine(method.FullName);
+							throw;
+						}
 						break;
 					}
 				case MosaProperty property:
