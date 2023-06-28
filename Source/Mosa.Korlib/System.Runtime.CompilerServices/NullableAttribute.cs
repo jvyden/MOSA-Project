@@ -1,9 +1,10 @@
 // Copyright (c) MOSA Project. Licensed under the New BSD License.
 
+using System.Microsoft.CodeAnalysis;
+
 namespace System.Runtime.CompilerServices;
 
-// [CompilerGenerated]
-[Microsoft.CodeAnalysis.Embedded]
+[Embedded]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Parameter | AttributeTargets.ReturnValue | AttributeTargets.GenericParameter, AllowMultiple = false, Inherited = false)]
 public sealed class NullableAttribute : Attribute
 {
