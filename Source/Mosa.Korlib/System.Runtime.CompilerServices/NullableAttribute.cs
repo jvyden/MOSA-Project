@@ -9,15 +9,15 @@ public sealed class NullableAttribute : Attribute
 {
 	public readonly byte[] NullableFlags;
 
-	public NullableAttribute(byte P_0)
+	public NullableAttribute(byte flag)
 	{
-		byte[] array = new byte[1];
-		array[0] = P_0;
-		NullableFlags = array;
+		byte[] flags = new byte[1];
+		flags[0] = flag;
+		NullableFlags = flags;
 	}
 
-	public NullableAttribute(byte[] P_0)
+	public NullableAttribute(byte[] flags)
 	{
-		NullableFlags = P_0;
+		NullableFlags = flags;
 	}
 }
