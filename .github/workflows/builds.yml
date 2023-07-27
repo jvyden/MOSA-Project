@@ -34,7 +34,7 @@ jobs:
       - name: Restore nuget Packages
         run: dotnet restore Source/Mosa.sln
       - name: Build
-        run: dotnet build Source/Mosa.sln /p:Version=${{ env.BUILD_VERSION }}
+        run: dotnet build --no-restore Source/Mosa.sln /p:Version=${{ env.BUILD_VERSION }}
       - name: Cleanup 
         run: cmd.exe /C "rmdir /s /q bin\reko bin\cs bin\de bin\es bin\fr bin\it bin\ja bin\ko bin\pl bin\pt-BR bin\ru bin\tr bin\zh-Hans bin\zh-Hant"
       - name: Store Build Artifact
@@ -43,7 +43,7 @@ jobs:
           name: windows-build-artifact
           path: bin
       - name: Build Project - Mosa.Templates
-        run: dotnet build --no-restore Source\Mosa.Templates\Mosa.Templates.csproj
+        run: dotnet build Source\Mosa.Templates\Mosa.Templates.csproj
       - name: Create Package - Mosa.Templates
         run: nuget pack Source\Mosa.Templates\Mosa.Templates.csproj -Tool -OutputDirectory bin\nupkg -Version ${{ env.BUILD_VERSION }}
       - name: Create Package - Mosa.Tools.Package
