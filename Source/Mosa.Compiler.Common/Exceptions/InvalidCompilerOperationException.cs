@@ -16,7 +16,7 @@ public class InvalidCompilerOperationException : CompilerException
 		var callStack = new StackFrame(1, true);
 		var method = callStack.GetMethod();
 
-		BaseMessage = $"Invalid Operation: {method.DeclaringType.Name}.{method.Name} at line {callStack.GetFileLineNumber()}";
+		BaseMessage = $"Invalid Operation: {method.DeclaringType.Name}.{method.Name} at line {callStack.GetFileLineNumber}";
 	}
 
 	public InvalidCompilerOperationException(string message, bool includeMethod = true) : base(message)
@@ -26,7 +26,7 @@ public class InvalidCompilerOperationException : CompilerException
 			var callStack = new StackFrame(1, true);
 			var method = callStack.GetMethod();
 
-			BaseMessage = $"{message}: {method.DeclaringType.Name}.{method.Name} at line {callStack.GetFileLineNumber()}";
+			BaseMessage = $"{message}: {method.DeclaringType.Name}.{method.Name} at line {callStack.GetFileLineNumber}";
 		}
 	}
 }
