@@ -7,7 +7,7 @@ namespace Mosa.Kernel.BareMetal.MultibootSpecification;
 /// <summary>
 /// Multiboot V1 Memory Map
 /// </summary>
-public /*readonly*/ struct MultibootV1MemoryMapEntry
+public struct MultibootV1MemoryMapEntry
 {
 	public readonly Pointer Entry;
 
@@ -26,10 +26,7 @@ public /*readonly*/ struct MultibootV1MemoryMapEntry
 	/// <summary>
 	/// Setup Multiboot V1 Memory Map Entry.
 	/// </summary>
-	public MultibootV1MemoryMapEntry(Pointer entry)
-	{
-		Entry = entry;
-	}
+	public MultibootV1MemoryMapEntry(Pointer entry) => Entry = entry;
 
 	public uint Size => Entry.Load32(MultiBootMemoryMapOffset.Size);
 

@@ -7,7 +7,11 @@ namespace Mosa.Kernel.BareMetal.x86;
 /// </summary>
 public static class VGAConsole
 {
-	private enum ControlState { Normal, Escape };
+	// VT100 Info:
+	// https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+
+	private enum ControlState
+	{ Normal, Escape };
 
 	private static ControlState State = ControlState.Normal;
 
@@ -122,58 +126,94 @@ public static class VGAConsole
 		}
 		else if (FirstCharacter == (byte)'[')
 		{
-			if (FinalCharacter == (byte)'m')
+			switch (FinalCharacter)
 			{
-				// Display Attributes
-				for (int i = 0; i < ParameterCount; i++)
-				{
-					var parameter = GetParameter(i + 1);
-
-					switch (parameter)
+				case (byte)'m':
 					{
-						case 30: VGAText.SetColor(VGAColor.Black); break;
-						case 31: VGAText.SetColor(VGAColor.Red); break;
-						case 32: VGAText.SetColor(VGAColor.Green); break;
-						case 33: VGAText.SetColor(VGAColor.Yellow); break;
-						case 34: VGAText.SetColor(VGAColor.Blue); break;
-						case 35: VGAText.SetColor(VGAColor.Magenta); break;
-						case 36: VGAText.SetColor(VGAColor.Cyan); break;
-						case 37: VGAText.SetColor(VGAColor.White); break;
+						// Display Attributes
+						for (int i = 0; i < ParameterCount; i++)
+						{
+							var parameter = GetParameter(i + 1);
 
-						case 40: VGAText.SetBackground(VGAColor.Black); break;
-						case 41: VGAText.SetBackground(VGAColor.Red); break;
-						case 42: VGAText.SetBackground(VGAColor.Green); break;
-						case 43: VGAText.SetBackground(VGAColor.Yellow); break;
-						case 44: VGAText.SetBackground(VGAColor.Blue); break;
-						case 45: VGAText.SetBackground(VGAColor.Magenta); break;
-						case 46: VGAText.SetBackground(VGAColor.Cyan); break;
-						case 47: VGAText.SetBackground(VGAColor.White); break;
+							switch (parameter)
+							{
+								case 30: VGAText.SetColor(VGAColor.Black); break;
+								case 31: VGAText.SetColor(VGAColor.Red); break;
+								case 32: VGAText.SetColor(VGAColor.Green); break;
+								case 33: VGAText.SetColor(VGAColor.Yellow); break;
+								case 34: VGAText.SetColor(VGAColor.Blue); break;
+								case 35: VGAText.SetColor(VGAColor.Magenta); break;
+								case 36: VGAText.SetColor(VGAColor.Cyan); break;
+								case 37: VGAText.SetColor(VGAColor.LightGray); break;
 
-						// FUTURE:
-						//0   Reset all attributes
-						//1   Bright
-						//2   Dim
-						//4   Underscore
-						//5   Blink
-						//7   Reverse
-						//8   Hidden
+								case 90: VGAText.SetColor(VGAColor.DarkGray); break;
+								case 91: VGAText.SetColor(VGAColor.LightRed); break;
+								case 92: VGAText.SetColor(VGAColor.LightGreen); break;
+								case 93: VGAText.SetColor(VGAColor.Yellow); break;
+								case 94: VGAText.SetColor(VGAColor.LightBlue); break;
+								case 95: VGAText.SetColor(VGAColor.LightMagenta); break;
+								case 96: VGAText.SetColor(VGAColor.LightCyan); break;
+								case 97: VGAText.SetColor(VGAColor.White); break;
 
-						default: break;
+								case 40: VGAText.SetBackground(VGAColor.Black); break;
+								case 41: VGAText.SetBackground(VGAColor.Red); break;
+								case 42: VGAText.SetBackground(VGAColor.Green); break;
+								case 43: VGAText.SetBackground(VGAColor.Yellow); break;
+								case 44: VGAText.SetBackground(VGAColor.Blue); break;
+								case 45: VGAText.SetBackground(VGAColor.Magenta); break;
+								case 46: VGAText.SetBackground(VGAColor.Cyan); break;
+								case 47: VGAText.SetBackground(VGAColor.White); break;
+
+								case 100: VGAText.SetBackground(VGAColor.DarkGray); break;
+								case 101: VGAText.SetBackground(VGAColor.LightRed); break;
+								case 102: VGAText.SetBackground(VGAColor.LightGreen); break;
+								case 103: VGAText.SetBackground(VGAColor.Yellow); break;
+								case 104: VGAText.SetBackground(VGAColor.LightBlue); break;
+								case 105: VGAText.SetBackground(VGAColor.LightMagenta); break;
+								case 106: VGAText.SetBackground(VGAColor.LightCyan); break;
+								case 107: VGAText.SetBackground(VGAColor.White); break;
+
+								// FUTURE:
+								//0   Reset all attributes
+								//1   Bright
+								//2   Dim
+								//4   Underscore
+								//5   Blink
+								//7   Reverse
+								//8   Hidden
+
+								default: break;
+							}
+						}
+
+						break;
 					}
-				}
-			}
-			else if (FinalCharacter == (byte)'J')
-			{
-				var parameter = GetParameter(1);
 
-				switch (parameter)
-				{
-					case 0: break; // TODO: Clear screen cursor dowon
-					case 1: break; // TODO: Clear screen cursor up
-					case 2: VGAText.Clear(); break;
-					default: break;
-				}
+				case (byte)'J':
+					{
+						var parameter = GetParameter(1);
+
+						switch (parameter)
+						{
+							case 0: break; // TODO: Clear screen cursor dowon
+							case 1: break; // TODO: Clear screen cursor up
+							case 2: VGAText.Clear(); break;
+							default: break;
+						}
+
+						break;
+					}
+
+				case (byte)'H':
+					{
+						var x = GetParameter(1);
+						var y = GetParameter(2);
+
+						VGAText.Goto(x, y);
+						break;
+					}
 			}
+
 			ClearControlSequences();
 		}
 	}
@@ -186,7 +226,7 @@ public static class VGAConsole
 	private static bool IsCharacter(byte b)
 	{
 		return (b >= (byte)'a' && b <= (byte)'z')
-		       || (b >= (byte)'A' && b <= (byte)'Z');
+			   || (b >= (byte)'A' && b <= (byte)'Z');
 	}
 
 	private static void ConvertBufferToParameter()

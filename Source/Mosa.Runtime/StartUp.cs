@@ -6,12 +6,14 @@ public static class StartUp
 {
 	public static void Initialize()
 	{
-		SetInitialMemory();             // Legacy
+		BootOptions();
+
+		SetInitialMemory();                 // Legacy
 
 		PlatformInitialization();
-		GarbageCollectionInitialization();
+		GarbageCollectionInitialization();  // Legacy
 
-		KernelInitialization();         // Legacy
+		KernelInitialization();             // Legacy
 
 		InitializeAssembly();
 		InitializeRuntimeMetadata();
@@ -19,6 +21,10 @@ public static class StartUp
 		KernelEntryPoint();
 
 		StartApplication();
+	}
+
+	public static void BootOptions()
+	{
 	}
 
 	public static void PlatformInitialization()

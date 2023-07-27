@@ -9,6 +9,24 @@ public static class Console
 	public const byte Formfeed = 0x0C;
 	public const byte Backspace = 0x08;
 
+	#region Public API
+
+	public static void GotoTop()
+	{
+		Write(Escape);
+		Write("[0;0H");
+	}
+
+	public static void Goto(uint row, uint col)
+	{
+		Write(Escape);
+		Write("[");
+		WriteValue(col);
+		Write(";");
+		WriteValue(row);
+		Write("H");
+	}
+
 	public static void Write(byte c)
 	{
 		Platform.ConsoleWrite(c);
@@ -33,6 +51,29 @@ public static class Console
 		Write(Newline);
 	}
 
+	public static void WriteLine(ConsoleColor color, string s)
+	{
+		SetForground(color);
+		WriteLine(s);
+	}
+
+	public static void Write(ConsoleColor color, string s)
+	{
+		SetForground(color);
+		Write(s);
+	}
+
+	public static void WriteLine(ConsoleColor color)
+	{
+		SetForground(color);
+		Write(Newline);
+	}
+
+	public static void Write(ConsoleColor color)
+	{
+		SetForground(color);
+	}
+
 	public static void WriteLine()
 	{
 		Write(Newline);
@@ -46,55 +87,49 @@ public static class Console
 
 	public static void SetForground(ConsoleColor color)
 	{
+		var c = (byte)color;
+
 		Write(Escape);
-		Write("[3");
-		Write((byte)((byte)'0' + (byte)color % 10));
+		Write("[");
+		Write((byte)((byte)'0' + c / 10 % 10));
+		Write((byte)((byte)'0' + c % 10));
 		Write("m");
 	}
 
 	public static void SetBackground(ConsoleColor color)
 	{
+		var c = (byte)color + 10;
+
 		Write(Escape);
-		Write("[4");
-		Write((byte)((byte)'0' + (byte)color % 10));
+		Write("[");
+		Write((byte)((byte)'0' + c / 10 % 10));
+		Write((byte)((byte)'0' + c % 10));
 		Write("m");
 	}
 
-	/// <summary>
-	/// Writes the specified value.
-	/// </summary>
-	/// <param name="val">The value.</param>
 	public static void WriteValue(ulong value)
 	{
 		WriteValue(value, 10, -1);
 	}
 
-	/// <summary>
-	/// Writes the specified value.
-	/// </summary>
-	/// <param name="val">The value.</param>
 	public static void WriteValueAsHex(ulong value)
 	{
 		WriteValue(value, 16, -1);
 	}
 
-	/// <summary>
-	/// Writes the specified value.
-	/// </summary>
-	/// <param name="val">The value.</param>
 	public static void WriteValue(ulong value, int length)
 	{
 		WriteValue(value, 10, length);
 	}
 
-	/// <summary>
-	/// Writes the specified value.
-	/// </summary>
-	/// <param name="val">The value.</param>
 	public static void WriteValueAsHex(ulong value, int length)
 	{
 		WriteValue(value, 16, length);
 	}
+
+	#endregion Public API
+
+	#region Private API
 
 	private static void WriteValue(ulong value, byte @base, int length)
 	{
@@ -137,4 +172,6 @@ public static class Console
 		else
 			Write((char)('A' + digit - 10));
 	}
+
+	#endregion Private API
 }

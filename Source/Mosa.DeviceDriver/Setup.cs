@@ -13,16 +13,8 @@ public static class Setup
 		{
 			new ISADeviceDriverRegistryEntry
 			{
-				Name = "ACPI",
-				Platforms = PlatformArchitecture.X86,
-				AutoLoad = true,
-				Factory = () => new ISA.ACPI()
-			},
-
-			new ISADeviceDriverRegistryEntry
-			{
 				Name = "StandardKeyboard",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				AutoLoad = true,
 				BasePort = 0x60,
 				PortRange = 1,
@@ -35,7 +27,7 @@ public static class Setup
 			new ISADeviceDriverRegistryEntry
 			{
 				Name = "StandardMouse",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				AutoLoad = true,
 				BasePort = 0x60,
 				PortRange = 1,
@@ -48,7 +40,7 @@ public static class Setup
 			new ISADeviceDriverRegistryEntry
 			{
 				Name = "PCIController",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				AutoLoad = true,
 				BasePort = 0x0CF8,
 				PortRange = 8,
@@ -58,7 +50,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "PCIGenericHostBridge",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				ClassCode = 0x06,
 				SubClassCode = 0x00,
@@ -69,7 +61,7 @@ public static class Setup
 			new ISADeviceDriverRegistryEntry
 			{
 				Name = "IDEController",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				AutoLoad = true,
 				BasePort = 0x1F0,
 				PortRange = 8,
@@ -81,7 +73,7 @@ public static class Setup
 			new ISADeviceDriverRegistryEntry
 			{
 				Name = "IDEController (Secondary)",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				AutoLoad = true,
 				BasePort = 0x170,
 				PortRange = 8,
@@ -94,7 +86,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "Intel4SeriesChipsetDRAMController",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x2E10,
@@ -105,7 +97,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "Intel4SeriesChipsetIntegratedGraphicsController",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x2E10,
@@ -116,7 +108,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "Intel4SeriesChipsetIntegratedGraphicsController2E13",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x2E10,
@@ -127,7 +119,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "Intel4SeriesChipsetPCIExpressRootPort",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x2E10,
@@ -138,7 +130,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "Intel4SeriesChipsetPCIExpressRootPort",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x2E10,
@@ -149,7 +141,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "Intel440FX",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x1237,
@@ -162,7 +154,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "IntelPIIX3",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x7000,
@@ -173,7 +165,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "IntelPIIX4",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x7113,
@@ -184,7 +176,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "IntelGPIOController",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x0934,
@@ -199,7 +191,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "IntelHSUART",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x0936,
@@ -214,7 +206,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "PCIIDEInterface",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x8086,
 				DeviceID = 0x7010,
@@ -228,7 +220,7 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "VirtIOGPU",
-				Platforms = PlatformArchitecture.X86AndX64 | PlatformArchitecture.ARMv8A32,
+				Platform = PlatformArchitecture.X86AndX64 | PlatformArchitecture.ARMv8A32,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x1AF4,
 				DeviceID = 0x1050,
@@ -239,12 +231,20 @@ public static class Setup
 			new PCIDeviceDriverRegistryEntry
 			{
 				Name = "VMwareSVGA2",
-				Platforms = PlatformArchitecture.X86AndX64,
+				Platform = PlatformArchitecture.X86AndX64,
 				BusType = DeviceBusType.PCI,
 				VendorID = 0x15AD,
 				DeviceID = 0x0405,
 				PCIFields = PCIField.VendorID | PCIField.DeviceID,
 				Factory = () => new PCI.VMware.VMwareSVGA2()
+			},
+
+			new ISADeviceDriverRegistryEntry
+			{
+				Name = "ACPI",
+				Platform = PlatformArchitecture.X86,
+				AutoLoad = true,
+				Factory = () => new ISA.ACPI.ACPIDriver()
 			},
 		};
 	}

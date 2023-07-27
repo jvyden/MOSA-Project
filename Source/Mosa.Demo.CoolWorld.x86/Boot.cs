@@ -264,14 +264,14 @@ public static class Boot
 
 		IDT.SetInterruptHandler(manager.ProcessInterrupt);
 
-		Logger.Log("<SELFTEST:PASSED>");
+		Logger.Log("##PASS##");
 
 		manager.Start();
 	}
 
 	public static void Pause()
 	{
-		DeviceSystem.HAL.Pause();
+		DeviceSystem.HAL.Yield();
 	}
 
 	public static void ForeverLoop()

@@ -1,24 +1,35 @@
-// Copyright (c) MOSA Project. Licensed under the New BSD License.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Microsoft.CodeAnalysis;
+//using System.ComponentModel;
 
-namespace System.Runtime.CompilerServices;
-
-[Embedded]
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Parameter | AttributeTargets.ReturnValue | AttributeTargets.GenericParameter, AllowMultiple = false, Inherited = false)]
-public sealed class NullableAttribute : Attribute
+namespace System.Runtime.CompilerServices
 {
-	public readonly byte[] NullableFlags;
-
-	public NullableAttribute(byte flag)
+	/// <summary>
+	/// Reserved for use by a compiler for tracking metadata.
+	/// This attribute should not be used by developers in source code.
+	/// </summary>
+	//[EditorBrowsable(EditorBrowsableState.Never)]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Parameter | AttributeTargets.ReturnValue | AttributeTargets.GenericParameter, Inherited = false)]
+	public sealed class NullableAttribute : Attribute
 	{
-		byte[] flags = new byte[1];
-		flags[0] = flag;
-		NullableFlags = flags;
-	}
+		/// <summary>Flags specifying metadata related to nullable reference types.</summary>
+		public readonly byte[] NullableFlags;
 
-	public NullableAttribute(byte[] flags)
-	{
-		NullableFlags = flags;
+		/// <summary>Initializes the attribute.</summary>
+		/// <param name="value">The flags value.</param>
+		public NullableAttribute(byte value)
+		{
+			NullableFlags = new[] { value };
+		}
+
+		/// <summary>Initializes the attribute.</summary>
+		/// <param name="value">The flags value.</param>
+		public NullableAttribute(byte[] value)
+		{
+			NullableFlags = value;
+		}
 	}
 }
+
+

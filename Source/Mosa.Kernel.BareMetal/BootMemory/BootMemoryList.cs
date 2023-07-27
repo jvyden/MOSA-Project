@@ -4,23 +4,20 @@ using Mosa.Runtime;
 
 namespace Mosa.Kernel.BareMetal.BootMemory;
 
-public /*readonly*/ struct BootMemoryList
+public struct BootMemoryList
 {
-	private readonly Pointer Entry;
+	private readonly Pointer Pointer;
 
-	public BootMemoryList(Pointer entry)
-	{
-		Entry = entry;
-	}
+	public BootMemoryList(Pointer entry) => Pointer = entry;
 
 	public uint Count
 	{
-		get => Entry.Load32();
-		set => Entry.Store32(value);
+		get => Pointer.Load32();
+		set => Pointer.Store32(value);
 	}
 
 	public BootMemoryMapEntry GetBootMemoryMapEntry(uint index)
 	{
-		return new BootMemoryMapEntry(Entry + sizeof(uint) + BootMemoryMapEntry.EntrySize * index);
+		return new BootMemoryMapEntry(Pointer + sizeof(uint) + BootMemoryMapEntry.EntrySize * index);
 	}
 }

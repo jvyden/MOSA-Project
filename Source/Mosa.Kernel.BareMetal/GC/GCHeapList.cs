@@ -4,23 +4,20 @@ using Mosa.Runtime;
 
 namespace Mosa.Kernel.BareMetal.GC;
 
-public /*readonly*/ struct GCHeapList
+public struct GCHeapList
 {
-	private readonly Pointer Entry;
+	private readonly Pointer Pointer;
 
-	public GCHeapList(Pointer entry)
-	{
-		Entry = entry;
-	}
+	public GCHeapList(Pointer entry) => Pointer = entry;
 
 	public uint Count
 	{
-		get => Entry.Load32();
-		set => Entry.Store32(value);
+		get => Pointer.Load32();
+		set => Pointer.Store32(value);
 	}
 
-	public GCHeap GetGCHeapEntry(uint index)
+	public GCHeap GetHeapEntry(uint index)
 	{
-		return new GCHeap(Entry + sizeof(uint) + Pointer.Size * 2 * index);
+		return new GCHeap(Pointer + sizeof(uint) + Pointer.Size * 2 * index);
 	}
 }

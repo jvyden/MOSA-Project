@@ -46,7 +46,7 @@ public static class Boot
 
 		IDT.SetInterruptHandler(null);
 		Screen.Write('2');
-		Debugger.Setup(Serial.COM1);
+		UnitTestEngine.Setup(Serial.COM1);
 
 		Screen.Write('3');
 		PIC.Setup();
@@ -337,5 +337,15 @@ public static class Boot
 	public static bool Test5()
 	{
 		return Mosa.UnitTests.Basic.ArrayLayoutTests.I8a();
+	}
+
+	public static string str = null!;
+
+#nullable enable
+
+	public static void TestNullable()
+	{
+		str = "Hello!";
+		Screen.WriteLine(str);
 	}
 }

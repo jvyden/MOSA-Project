@@ -76,9 +76,9 @@ Below are the command line arguments available:
     -emit-relocations,Linker.StaticRelocations,true
     -emit-relocations-off,Linker.StaticRelocations,false
     -emit-static-relocations,Linker.StaticRelocations,true
-    -emit-drawf,Linker.Drawf,true
-    -emit-drawf-off,Linker.Drawf,false
-    -drawf,Linker.Drawf,true
+    -emit-Dwarf,Linker.Dwarf,true
+    -emit-Dwarf-off,Linker.Dwarf,false
+    -Dwarf,Linker.Dwarf,true
 
     Explorer:
     -filter,Explorer.Filter,{value}
@@ -102,8 +102,10 @@ Below are the command line arguments available:
     -bochs,Emulator,bochs
     -display,Emulator.Display,on
     -display-off,Emulator.Display,off
-    -memory,Emulator.Memory,
+    -memory,Emulator.Memory
     -gdb,Emulator.GDB,true
+	-timeout,Emulator.MaxRuntime,{value}
+	-debug,Launcher.Serial,true
     
     Launcher - Emulator - Qemu & VMWare:
     -vmware-svga,Emulator.SVGA,vmware

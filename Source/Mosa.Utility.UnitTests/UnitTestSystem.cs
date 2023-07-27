@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Mosa.Compiler.Common.Configuration;
 using Mosa.Compiler.Framework.Linker;
 using Mosa.Compiler.MosaTypeSystem;
 using Mosa.Utility.Configuration;
@@ -19,22 +20,21 @@ public static class UnitTestSystem
 
 	public static int Start(string[] args)
 	{
-		var settings = SettingsLoader.RecursiveReader(args);
+		var mosaSettings = new MosaSettings();
+		mosaSettings.LoadArguments(args);
 
 		var stopwatch = new Stopwatch();
 		stopwatch.Start();
 
 		Console.WriteLine("Discovering Unit Tests...");
 
-		var filter = settings.GetValue("UnitTest.Filter", null);
-
-		var discoveredUnitTests = Discovery.DiscoverUnitTests(filter);
+		var discoveredUnitTests = Discovery.DiscoverUnitTests(mosaSettings.UnitTestFilter);
 
 		Console.WriteLine($"Found Tests: {discoveredUnitTests.Count} in {(stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2")} secs");
 		Console.WriteLine();
 		Console.WriteLine("Starting Unit Test Engine...");
 
-		var unitTestEngine = new UnitTestEngine(settings);
+		var unitTestEngine = new UnitTestEngine(mosaSettings);
 
 		if (unitTestEngine.IsAborted)
 		{
@@ -129,7 +129,7 @@ public static class UnitTestSystem
 			var unitTest = new UnitTest(unitTestInfo, linkerMethodInfo);
 
 			unitTest.SerializedUnitTest = SerializeUnitTestMessage(unitTest);
-			unitTest.UnitTestID = id++;
+			unitTest.UnitTestID = ++id;
 
 			unitTests.Add(unitTest);
 		}
@@ -156,16 +156,14 @@ public static class UnitTestSystem
 		return new IntPtr((long)symbol.VirtualAddress);
 	}
 
-	public static void SerializeUnitTest(UnitTest unitTest)
+	public static List<int> SerializeUnitTestMessage(UnitTest unitTest)
 	{
-		unitTest.SerializedUnitTest = SerializeUnitTestMessage(unitTest);
-	}
+		var address = unitTest.MosaMethodAddress.ToInt64();
 
-	public static IList<int> SerializeUnitTestMessage(UnitTest unitTest)
-	{
-		var cmd = new List<int>(4 + 4 + 4 + unitTest.MosaMethod.Signature.Parameters.Count)
+		var cmd = new List<int>(4 + 4 + 4 + 4 + unitTest.MosaMethod.Signature.Parameters.Count)
 		{
-			(int)unitTest.MosaMethodAddress,
+			(int)address,
+			//(int)(address>>32),
 			GetReturnResultType(unitTest.MosaMethod.Signature.ReturnType),
 			0
 		};
@@ -280,12 +278,14 @@ public static class UnitTestSystem
 		}
 	}
 
-	public static void ParseResultData(UnitTest unitTest, List<byte> data)
+	public static void ParseResultData(UnitTest unitTest, ulong data)
 	{
-		unitTest.Result = GetResult(unitTest.MosaMethod.Signature.ReturnType, data);
+		var arr = BitConverter.GetBytes(data);
+
+		unitTest.Result = GetResult(unitTest.MosaMethod.Signature.ReturnType, arr);
 	}
 
-	public static object GetResult(MosaType type, List<byte> data)
+	public static object GetResult(MosaType type, byte[] data)
 	{
 		if (type.IsI1)
 		{

@@ -57,9 +57,14 @@ public sealed class DeviceService : BaseService
 
 	public void RegisterDeviceDriver(List<DeviceDriverRegistryEntry> deviceDrivers)
 	{
+		var platformArchitecture = HAL.PlatformArchitecture;
+
 		foreach (var deviceDriver in deviceDrivers)
 		{
-			RegisterDeviceDriver(deviceDriver);
+			if ((deviceDriver.Platform & platformArchitecture) == platformArchitecture)
+			{
+				RegisterDeviceDriver(deviceDriver);
+			}
 		}
 	}
 
@@ -102,6 +107,14 @@ public sealed class DeviceService : BaseService
 
 	public Device Initialize(BaseDeviceDriver deviceDriver, Device parent, bool autoStart = true, BaseDeviceConfiguration configuration = null, HardwareResources resources = null, DeviceDriverRegistryEntry deviceDriverRegistryEntry = null)
 	{
+		HAL.DebugWriteLine("DeviceService:Initialize()");
+
+		if (deviceDriverRegistryEntry != null)
+		{
+			HAL.DebugWrite($" > Driver: ");
+			HAL.DebugWriteLine(deviceDriverRegistryEntry.Name);
+		}
+
 		var device = new Device
 		{
 			DeviceDriver = deviceDriver,
@@ -120,6 +133,8 @@ public sealed class DeviceService : BaseService
 			StartDevice(device);
 		}
 
+		HAL.DebugWriteLine("DeviceService:Initialize() [Exit]");
+
 		return device;
 	}
 
@@ -129,8 +144,16 @@ public sealed class DeviceService : BaseService
 	/// <param name="device">The device.</param>
 	private void StartDevice(Device device)
 	{
-		//HAL.DebugWriteLine($"DeviceService:StartDevice():Enter = " + (device.Name ?? string.Empty));
-		//HAL.Pause();
+		HAL.DebugWriteLine("DeviceService:StartDevice()");
+
+		if (device.Name != null)
+		{
+			HAL.DebugWriteLine("#Device Name Length: " + device.Name.Length.ToString());
+
+			HAL.DebugWrite($" > Device: ");
+
+			HAL.DebugWriteLine(device.Name);
+		}
 
 		lock (_lock)
 		{
@@ -149,6 +172,8 @@ public sealed class DeviceService : BaseService
 		if (device.Status == DeviceStatus.Initializing)
 		{
 			//HAL.DebugWriteLine("DeviceService:StartDevice():Initializing = " + (device.Name ?? string.Empty));
+			//Debug.WriteLine(" > Initializing: ", device.Name);
+
 			device.DeviceDriver.Initialize();
 			if (device.Status == DeviceStatus.Initializing)
 			{

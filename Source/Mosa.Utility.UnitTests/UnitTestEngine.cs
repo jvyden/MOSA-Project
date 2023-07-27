@@ -8,38 +8,21 @@ using System.IO.Pipes;
 using System.Net.Sockets;
 using System.Threading;
 using Mosa.Compiler.Common;
-using Mosa.Compiler.Common.Configuration;
 using Mosa.Compiler.Framework;
 using Mosa.Compiler.Framework.Linker;
 using Mosa.Compiler.Framework.Trace;
 using Mosa.Compiler.MosaTypeSystem;
-using Mosa.Utility.DebugEngine;
+using Mosa.Utility.Configuration;
 using Mosa.Utility.Launcher;
+using Mosa.Utility.UnitTests.DebugEngine;
 
 namespace Mosa.Utility.UnitTests;
 
 public class UnitTestEngine : IDisposable
 {
-	#region Constants
-
-	protected static class Constant
-	{
-		public const int MaxErrors = 1000;
-		public const int ConnectionTimeOut = 8000; // in milliseconds
-		public const int TimeOut = 750; // in milliseconds
-		public const int MaxAttempts = 20;
-		public const int Port = 11110;
-	}
-
-	#endregion Constants
-
 	#region Public Methods
 
 	public bool IsAborted => Aborted;
-
-	public string TestAssemblyPath { get; set; }
-
-	public string TestSuiteFile { get; set; }
 
 	public TypeSystem TypeSystem { get; internal set; }
 
@@ -51,7 +34,6 @@ public class UnitTestEngine : IDisposable
 
 	private const int MaxSentQueue = 10000;
 	private const int MinSend = 2000;
-
 	private const int ConnectionDelay = 150;
 
 	#endregion Constants
@@ -62,20 +44,15 @@ public class UnitTestEngine : IDisposable
 	protected Starter Starter;
 	protected Process Process;
 
-	private Settings Settings;
+	private MosaSettings MosaSettings = new MosaSettings();
 
 	private readonly object _lock = new object();
 
 	private volatile bool Aborted;
 	private volatile bool Ready;
 
-	private int MaxErrors = Constant.MaxErrors;
-	private int ConnectionTimeOut = Constant.ConnectionTimeOut; // in milliseconds
-	private int MaxAttempts;
-	private int TimeOut = Constant.TimeOut; // in milliseconds
-
-	private readonly Queue<DebugMessage> Queue = new Queue<DebugMessage>();
-	private readonly HashSet<DebugMessage> Pending = new HashSet<DebugMessage>();
+	private readonly Queue<UnitTest> Queue = new Queue<UnitTest>();
+	private readonly Dictionary<int, UnitTest> Active = new Dictionary<int, UnitTest>();
 
 	private Thread ProcessThread;
 
@@ -89,89 +66,41 @@ public class UnitTestEngine : IDisposable
 
 	#endregion Private Data Members
 
-	public UnitTestEngine(Settings settings)
+	public UnitTestEngine(MosaSettings mosaSettings)
 	{
-		Settings = AppLocationsSettings.GetAppLocations();
-
-		Settings.SetValue("Compiler.MethodScanner", false);
-		Settings.SetValue("Compiler.Multithreading", true);
-		Settings.SetValue("Compiler.Platform", "x86");
-		Settings.SetValue("CompilerDebug.DebugFile", "%DEFAULT%");
-		Settings.SetValue("CompilerDebug.AsmFile", "%DEFAULT%");
-		Settings.SetValue("CompilerDebug.MapFile", "%DEFAULT%");
-		Settings.SetValue("CompilerDebug.InlinedFile", "%DEFAULT%");
-		Settings.SetValue("CompilerDebug.NasmFile", string.Empty);
-
-		Settings.SetValue("Optimizations.Basic", true);
-		Settings.SetValue("Optimizations.BitTracker", true);
-		Settings.SetValue("Optimizations.Inline", true);
-		Settings.SetValue("Optimizations.Inline.AggressiveMaximum", 24);
-		Settings.SetValue("Optimizations.Inline.Explicit", true);
-		Settings.SetValue("Optimizations.Inline.Maximum", 12);
-		Settings.SetValue("Optimizations.Basic.Window", 5);
-		Settings.SetValue("Optimizations.LongExpansion", true);
-		Settings.SetValue("Optimizations.LoopInvariantCodeMotion", true);
-		Settings.SetValue("Optimizations.Platform", true);
-		Settings.SetValue("Optimizations.SCCP", true);
-		Settings.SetValue("Optimizations.Devirtualization", true);
-		Settings.SetValue("Optimizations.SSA", true);
-		Settings.SetValue("Optimizations.TwoPass", true);
-		Settings.SetValue("Optimizations.ValueNumbering", true);
-
-		Settings.SetValue("Multiboot.Video", false);
-		Settings.SetValue("Multiboot.Video.Width", 640);
-		Settings.SetValue("Multiboot.Video.Height", 480);
-		Settings.SetValue("Multiboot.Video.Depth", 32);
-		Settings.SetValue("Emulator.Display", false);
-		Settings.SetValue("Emulator.Serial", "TCPServer");
-		Settings.SetValue("Emulator.Serial.Host", "127.0.0.1");
-		Settings.SetValue("Emulator.Serial.Port", Constant.Port);
-		Settings.SetValue("Emulator.Serial.Pipe", "MOSA");
-		Settings.SetValue("Multiboot.Version", "v1");
-		Settings.SetValue("Image.Firmware", "bios");
-		Settings.SetValue("Image.Folder", Path.Combine(Path.GetTempPath(), "MOSA-UnitTest"));
-		Settings.SetValue("Image.Format", "IMG");
-		Settings.SetValue("Image.FileSystem", "FAT16");
-		Settings.SetValue("Image.ImageFile", "%DEFAULT%");
-		Settings.SetValue("UnitTest.MaxErrors", Constant.MaxErrors);
-		Settings.SetValue("UnitTest.TimeOut", Constant.TimeOut);
-		Settings.SetValue("UnitTest.Connection.TimeOut", Constant.ConnectionTimeOut);
-		Settings.SetValue("UnitTest.Connection.MaxAttempts", Constant.MaxAttempts);
-		Settings.SetValue("OS.Name", "MOSA");
-
-		Settings.Merge(settings);
-
-		Settings.SetValue("Compiler.BaseAddress", 0x00500000);
-		Settings.SetValue("Compiler.Binary", true);
-		Settings.SetValue("Compiler.TraceLevel", 0);
-		Settings.SetValue("Launcher.PlugKorlib", true);
-		Settings.SetValue("Emulator", "Qemu");
-		Settings.SetValue("Emulator.Memory", 128);
-		Settings.SetValue("Emulator.Cores", 1);
-		Settings.SetValue("Launcher.Start", false);
-		Settings.SetValue("Launcher.Launch", false);
-		Settings.SetValue("Launcher.Exit", true);
+		MosaSettings.LoadAppLocations();
+		MosaSettings.SetDetfaultSettings();
+		MosaSettings.Merge(mosaSettings);
+		SetRequiredSettings();
+		MosaSettings.NormalizeSettings();
+		MosaSettings.ExpandSearchPaths();
 
 		Initialize();
 	}
 
+	private void SetRequiredSettings()
+	{
+		MosaSettings.BaseAddress = 0x00500000;
+		MosaSettings.EmitBinary = true;
+		MosaSettings.PlugKorlib = true;
+		MosaSettings.Emulator = "qemu";
+		MosaSettings.EmulatorMemory = 128;
+		MosaSettings.EmulatorCores = 1;
+		MosaSettings.Launcher = true;
+		MosaSettings.LauncherStart = false;
+		MosaSettings.LauncherExit = true;
+		MosaSettings.TraceLevel = 0;
+	}
+
 	private void Initialize()
 	{
-		MaxErrors = Settings.GetValue("UnitTest.MaxErrors", Constant.MaxErrors);
-		TimeOut = Settings.GetValue("UnitTest.TimeOut", Constant.TimeOut);
-		ConnectionTimeOut = Settings.GetValue("UnitTest.Connection.TimeOut", Constant.ConnectionTimeOut);
-		MaxAttempts = Settings.GetValue("nitTest.Connection.MaxAttempts", Constant.MaxAttempts);
-
-		if (TestAssemblyPath == null)
+		if (MosaSettings.SourceFiles == null || MosaSettings.SourceFiles.Count == 0)
 		{
-			TestAssemblyPath = AppContext.BaseDirectory;
-		}
+			MosaSettings.AddSourceFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Mosa.UnitTests.{MosaSettings.Platform}.dll"));
 
-		if (TestSuiteFile == null)
-		{
-			var platform = Settings.GetValue("Compiler.Platform", "x86");
+			//MosaSettings.AddSearchPath(Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory));
 
-			TestSuiteFile = $"Mosa.UnitTests.{platform}.dll";
+			Console.WriteLine(AppDomain.CurrentDomain.BaseDirectory);
 		}
 
 		Aborted = !Compile();
@@ -189,7 +118,7 @@ public class UnitTestEngine : IDisposable
 
 	private void ProcessQueueLaunch()
 	{
-		WatchDog = new WatchDog(TimeOut);
+		WatchDog = new WatchDog(MosaSettings.TimeOut);
 
 		try
 		{
@@ -215,7 +144,7 @@ public class UnitTestEngine : IDisposable
 		if (Aborted)
 			return;
 
-		var messages = new List<DebugMessage>();
+		var messages = new List<UnitTest>();
 
 		Stopwatch.Start();
 		Aborted = !StartEngine();
@@ -224,12 +153,12 @@ public class UnitTestEngine : IDisposable
 		{
 			lock (Queue)
 			{
-				if (Queue.Count == 0 && Pending.Count == 0)
+				if (Queue.Count == 0 && Active.Count == 0)
 				{
 					WatchDog.Restart();
 				}
 
-				if (Queue.Count > 0 || Pending.Count > 0)
+				if (Queue.Count > 0 || Active.Count > 0)
 				{
 					CheckEngine();
 				}
@@ -237,26 +166,22 @@ public class UnitTestEngine : IDisposable
 				if (Aborted)
 					return;
 
-				var sendFlag = Queue.Count > 0 && Pending.Count < MaxSentQueue;
+				var sendFlag = Queue.Count > 0 && Active.Count < MaxSentQueue;
 
-				if (MaxSentQueue - Pending.Count < MinSend && Queue.Count > MinSend)
+				if (MaxSentQueue - Active.Count < MinSend && Queue.Count > MinSend)
 				{
 					sendFlag = false;
 				}
 
 				// check if queue has requests or too many have already been sent
-				while ((SendOneCount < 0 && sendFlag && Pending.Count < MaxSentQueue && Queue.Count > 0)
-					   || (SendOneCount >= 0 && Queue.Count > 0 && Pending.Count == 0))
+				while ((SendOneCount < 0 && sendFlag && Active.Count < MaxSentQueue && Queue.Count > 0)
+					   || (SendOneCount >= 0 && Queue.Count > 0 && Active.Count == 0))
 				{
 					var message = Queue.Dequeue();
 
-					message.CallBack = MessageCallBack;
-
-					Pending.Add(message);
+					Active.Add(message.UnitTestID, message);
 
 					messages.Add(message);
-
-					//OutputStatus("Sent: " + (message.Other as UnitTest).FullMethodName);
 
 					if (SendOneCount >= 0)
 					{
@@ -264,12 +189,8 @@ public class UnitTestEngine : IDisposable
 					}
 				}
 
-				if (messages.Count > 0)
-				{
-					//OutputStatus("Batch Sent: " + messages.Count.ToString());
-					DebugServerEngine.SendCommand2(messages);
-					messages.Clear();
-				}
+				DebugServerEngine.Send(messages);
+				messages.Clear();
 			}
 
 			Thread.Yield();
@@ -285,9 +206,7 @@ public class UnitTestEngine : IDisposable
 				if (unitTest.Status == UnitTestStatus.Skipped)
 					continue;
 
-				var message = new DebugMessage(DebugCode.ExecuteUnitTest, unitTest.SerializedUnitTest, unitTest);
-
-				Queue.Enqueue(message);
+				Queue.Enqueue(unitTest);
 			}
 		}
 	}
@@ -301,7 +220,7 @@ public class UnitTestEngine : IDisposable
 
 			lock (Queue)
 			{
-				if (Queue.Count == 0 && Pending.Count == 0)
+				if (Queue.Count == 0 && Active.Count == 0)
 					return;
 			}
 
@@ -313,20 +232,20 @@ public class UnitTestEngine : IDisposable
 	{
 		Stopwatch.Restart();
 
-		Settings.AddPropertyListValue("SearchPaths", TestAssemblyPath);
-
-		Settings.ClearProperty("Compiler.SourceFiles");
-		Settings.AddPropertyListValue("Compiler.SourceFiles", Path.Combine(TestAssemblyPath, TestSuiteFile));
+		//MosaSettings.AddSearchPath(TestAssemblyPath);
+		//MosaSettings.ClearSourceFiles();
+		//MosaSettings.AddSourceFile(Path.Combine(TestAssemblyPath, TestSuiteFile));
 
 		var compilerHook = CreateCompilerHook();
 
-		var builder = new Builder(Settings, compilerHook);
+		var builder = new Builder(MosaSettings, compilerHook);
 
 		builder.Build();
 
 		Linker = builder.Linker;
 		TypeSystem = builder.TypeSystem;
-		Settings = builder.Settings;
+
+		MosaSettings = builder.MosaSettings; // Switch to builder settings
 
 		return builder.IsSucccessful;
 	}
@@ -372,7 +291,7 @@ public class UnitTestEngine : IDisposable
 
 	private void OutputStatus(string status)
 	{
-		Console.WriteLine($"{Stopwatch.Elapsed.TotalSeconds:0.00} | {status}");
+		Console.WriteLine($"{Stopwatch.Elapsed.TotalSeconds:00.00} | {status}");
 	}
 
 	public bool LaunchVirtualMachine()
@@ -383,8 +302,9 @@ public class UnitTestEngine : IDisposable
 		{
 			var compilerHook = CreateCompilerHook();
 
-			Starter = new Starter(Settings, compilerHook);
-			Settings = Starter.Settings;
+			Starter = new Starter(MosaSettings, compilerHook);
+
+			MosaSettings = Starter.MosaSettings; // Switch to starter settings
 		}
 
 		if (!Starter.Launch())
@@ -406,12 +326,12 @@ public class UnitTestEngine : IDisposable
 		if (DebugServerEngine == null)
 		{
 			DebugServerEngine = new DebugServerEngine();
-			DebugServerEngine.SetGlobalDispatch(GlobalDispatch);
+			DebugServerEngine.SetDispatch(MessageCallBack);
 		}
 
 		Thread.Sleep(50); // small delay to let emulator launch
 
-		var watchdog = new WatchDog(ConnectionTimeOut);
+		var watchdog = new WatchDog(MosaSettings.ConnectionTimeOut);
 
 		while (!watchdog.IsTimedOut)
 		{
@@ -438,20 +358,18 @@ public class UnitTestEngine : IDisposable
 	{
 		DebugServerEngine.Stream = null;
 
-		var serial = Settings.GetValue("Emulator.Serial", string.Empty).ToLowerInvariant();
-
-		switch (serial)
+		switch (MosaSettings.EmulatorSerial)
 		{
 			case "tcpserver":
 				{
-					var client = new TcpClient(Settings.GetValue("Emulator.Serial.Host", "localhost"), Settings.GetValue("Emulator.Serial.Port", 11110));
+					var client = new TcpClient(MosaSettings.EmulatorSerialHost, MosaSettings.EmulatorSerialPort);
 					DebugServerEngine.Stream = new DebugNetworkStream(client.Client, true);
 					break;
 				}
 
 			case "pipe":
 				{
-					var pipeStream = new NamedPipeClientStream(".", Settings.GetValue("Emulator.Serial.Pipe", "MOSA"), PipeDirection.InOut);
+					var pipeStream = new NamedPipeClientStream(".", MosaSettings.EmulatorSerialPipe, PipeDirection.InOut);
 					pipeStream.Connect();
 					DebugServerEngine.Stream = pipeStream;
 					break;
@@ -478,7 +396,7 @@ public class UnitTestEngine : IDisposable
 
 	private bool WaitForReady()
 	{
-		var watchdog = new WatchDog(ConnectionTimeOut);
+		var watchdog = new WatchDog(MosaSettings.ConnectionTimeOut);
 
 		while (!watchdog.IsTimedOut)
 		{
@@ -498,7 +416,7 @@ public class UnitTestEngine : IDisposable
 	{
 		lock (_lock)
 		{
-			for (var attempt = 0; attempt < MaxAttempts; attempt++)
+			for (var attempt = 0; attempt < MosaSettings.MaxAttempts; attempt++)
 			{
 				OutputStatus("Starting Engine...");
 
@@ -598,26 +516,27 @@ public class UnitTestEngine : IDisposable
 			{
 				KillVirtualMachine();
 
-				if (Pending.Count == 1)
+				if (Active.Count == 1)
 				{
-					foreach (var failed in Pending)
+					foreach (var entry in Active)
 					{
-						// OutputStatus("Failed - Requeueing: " + (failed.Other as UnitTest).FullMethodName);
-
-						(failed.Other as UnitTest).Status = UnitTestStatus.FailedByCrash;
+						entry.Value.Status = UnitTestStatus.FailedByCrash;
 					}
-					Pending.Clear();
+
+					Active.Clear();
 				}
 
-				foreach (var test in Pending)
+				foreach (var test in Active)
 				{
-					Queue.Enqueue(test);
+					Queue.Enqueue(test.Value);
 				}
 
-				Pending.Clear();
+				Active.Clear();
 				SendOneCount = 10;
 
 				OutputStatus("Re-starting engine...");
+
+				MosaSettings.EmulatorSerialPort++;
 
 				if (!StartEngine())
 				{
@@ -628,61 +547,49 @@ public class UnitTestEngine : IDisposable
 		}
 	}
 
-	private void GlobalDispatch(DebugMessage response)
+	private void MessageCallBack(int id, ulong data)
 	{
-		if (response == null)
-			return;
-
-		if (response.Code == DebugCode.Ready)
+		if (id == 0)
 		{
 			Ready = true;
-		}
-	}
-
-	private void MessageCallBack(DebugMessage response)
-	{
-		if (response == null)
 			return;
+		}
 
 		lock (Queue)
 		{
 			WatchDog.Restart();
 
-			CompletedUnitTestCount++;
-			Pending.Remove(response);
+			var unittest = Active[id];
+			unittest.SerializedResult = data;
 
-			//OutputStatus("Received: " + (response.Other as UnitTest).FullMethodName);
-			//OutputStatus(response.ToString());
+			Active.Remove(id);
+
+			CompletedUnitTestCount++;
 
 			if (CompletedUnitTestCount % 1000 == 0 && Stopwatch.Elapsed.Seconds != 0)
 			{
 				OutputStatus($"Unit Tests - Count: {CompletedUnitTestCount} Elapsed: {(int)Stopwatch.Elapsed.TotalSeconds} ({(CompletedUnitTestCount / Stopwatch.Elapsed.TotalSeconds).ToString("F2")} per second)");
 			}
-		}
 
-		if (response.Other is UnitTest unitTest)
-		{
-			UnitTestSystem.ParseResultData(unitTest, response.ResponseData);
+			UnitTestSystem.ParseResultData(unittest, data);
 
-			if (Equals(unitTest.Expected, unitTest.Result))
+			if (Equals(unittest.Expected, unittest.Result))
 			{
-				unitTest.Status = UnitTestStatus.Passed;
+				unittest.Status = UnitTestStatus.Passed;
 			}
 			else
 			{
-				unitTest.Status = UnitTestStatus.Failed;
-				var value = Equals(unitTest.Expected, unitTest.Result);
+				unittest.Status = UnitTestStatus.Failed;
+
 				Errors++;
 
-				OutputStatus($"ERROR: {UnitTestSystem.OutputUnitTestResult(unitTest)}");
+				OutputStatus($"ERROR: {UnitTestSystem.OutputUnitTestResult(unittest)}");
 
-				if (Errors >= MaxErrors)
+				if (Errors >= MosaSettings.MaxErrors)
 				{
 					Aborted = true;
 				}
 			}
-
-			//OutputStatus("RECD: " + unitTest.MethodTypeName + "." + unitTest.MethodName);
 		}
 	}
 

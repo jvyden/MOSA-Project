@@ -14,6 +14,7 @@ using Mosa.Compiler.Framework.Trace;
 using Mosa.Compiler.MosaTypeSystem;
 using Mosa.Compiler.MosaTypeSystem.CLR;
 using Mosa.Utility.BootImage;
+using Mosa.Utility.Configuration;
 
 namespace Mosa.Utility.Launcher;
 
@@ -31,8 +32,8 @@ public class Builder : BaseLauncher
 
 	public const uint MultibootHeaderLength = 3 * 16;
 
-	public Builder(Settings settings, CompilerHooks compilerHooks)
-		: base(settings, compilerHooks)
+	public Builder(MosaSettings mosaSettings, CompilerHooks compilerHooks)
+		: base(mosaSettings, compilerHooks)
 	{
 		Counters = new List<string>();
 
@@ -51,24 +52,24 @@ public class Builder : BaseLauncher
 
 		try
 		{
-			if (!Directory.Exists(LauncherSettings.TemporaryFolder))
+			if (!Directory.Exists(MosaSettings.TemporaryFolder))
 			{
-				Directory.CreateDirectory(LauncherSettings.ImageFolder);
+				Directory.CreateDirectory(MosaSettings.ImageFolder);
 			}
 
-			if (!Directory.Exists(LauncherSettings.ImageFolder))
+			if (!Directory.Exists(MosaSettings.ImageFolder))
 			{
-				Directory.CreateDirectory(LauncherSettings.ImageFolder);
+				Directory.CreateDirectory(MosaSettings.ImageFolder);
 			}
 
-			if (string.IsNullOrEmpty(LauncherSettings.SourceFiles[0]))
+			if (string.IsNullOrEmpty(MosaSettings.SourceFiles[0]))
 			{
 				Output("ERROR: Missing source file");
 				return;
 			}
-			else if (!File.Exists(LauncherSettings.SourceFiles[0]))
+			else if (!File.Exists(MosaSettings.SourceFiles[0]))
 			{
-				Output($"File {LauncherSettings.SourceFiles[0]} does not exists");
+				Output($"File {MosaSettings.SourceFiles[0]} does not exists");
 				return;
 			}
 
@@ -80,12 +81,12 @@ public class Builder : BaseLauncher
 
 			BuildImage();
 
-			if (!string.IsNullOrWhiteSpace(LauncherSettings.NasmFile))
+			if (!string.IsNullOrWhiteSpace(MosaSettings.NasmFile))
 			{
 				LaunchNDISASM();
 			}
 
-			if (!string.IsNullOrWhiteSpace(LauncherSettings.AsmFile))
+			if (!string.IsNullOrWhiteSpace(MosaSettings.AsmFile))
 			{
 				GenerateASMFile();
 			}
@@ -107,18 +108,19 @@ public class Builder : BaseLauncher
 
 	private bool Compile()
 	{
-		var fileHunter = new FileHunter(Path.GetDirectoryName(LauncherSettings.SourceFiles[0]));
+		var fileHunter = new FileHunter(Path.GetDirectoryName(MosaSettings.SourceFiles[0]));
 
-		if (LauncherSettings.PlugKorlib)
+		if (MosaSettings.PlugKorlib)
 		{
 			var fileKorlib = fileHunter.HuntFile("Mosa.Plug.Korlib.dll");
 
 			if (fileKorlib != null)
 			{
-				Settings.AddPropertyListValue("Compiler.SourceFiles", fileKorlib.FullName);
+				//MosaSettings.SourceFiles.Add(fileKorlib.FullName);
+				MosaSettings.AddSourceFile(fileKorlib.FullName);
 			}
 
-			var platform = LauncherSettings.Platform;
+			var platform = MosaSettings.Platform;
 
 			if (platform == "armv8a32")
 			{
@@ -129,13 +131,13 @@ public class Builder : BaseLauncher
 
 			if (fileKorlibPlatform != null)
 			{
-				Settings.AddPropertyListValue("Compiler.SourceFiles", fileKorlibPlatform.FullName);
+				MosaSettings.AddSourceFile(fileKorlibPlatform.FullName);
 			}
 		}
 
-		Output($"Compiling: {LauncherSettings.SourceFiles[0]}");
+		Output($"Compiling: {MosaSettings.SourceFiles[0]}");
 
-		var compiler = new MosaCompiler(Settings, CompilerHooks, new ClrModuleLoader(), new ClrTypeResolver());
+		var compiler = new MosaCompiler(MosaSettings, CompilerHooks, new ClrModuleLoader(), new ClrTypeResolver());
 
 		compiler.Load();
 		compiler.Initialize();
@@ -150,22 +152,22 @@ public class Builder : BaseLauncher
 
 	private void BuildImage()
 	{
-		if (string.IsNullOrWhiteSpace(LauncherSettings.ImageFormat))
+		if (string.IsNullOrWhiteSpace(MosaSettings.ImageFormat))
 			return;
 
-		Output($"Generating Image: {LauncherSettings.ImageFormat}");
+		Output($"Generating Image: {MosaSettings.ImageFormat}");
 
-		if (LauncherSettings.ImageFormat == "vmdk")
+		if (MosaSettings.ImageFormat == "vmdk")
 		{
-			var tmpimagefile = Path.Combine(LauncherSettings.TemporaryFolder, $"{Path.GetFileNameWithoutExtension(LauncherSettings.ImageFile)}.img");
+			var tmpimagefile = Path.Combine(MosaSettings.TemporaryFolder, $"{Path.GetFileNameWithoutExtension(MosaSettings.ImageFile)}.img");
 
 			CreateDiskImage(tmpimagefile);
 
 			CreateVMDK(tmpimagefile);
 		}
-		else if (LauncherSettings.ImageFormat == "vdi")
+		else if (MosaSettings.ImageFormat == "vdi")
 		{
-			var tmpimagefile = Path.Combine(LauncherSettings.TemporaryFolder, $"{Path.GetFileNameWithoutExtension(LauncherSettings.ImageFile)}.img");
+			var tmpimagefile = Path.Combine(MosaSettings.TemporaryFolder, $"{Path.GetFileNameWithoutExtension(MosaSettings.ImageFile)}.img");
 
 			CreateDiskImage(tmpimagefile);
 
@@ -173,7 +175,7 @@ public class Builder : BaseLauncher
 		}
 		else
 		{
-			CreateDiskImage(LauncherSettings.ImageFile);
+			CreateDiskImage(MosaSettings.ImageFile);
 		}
 	}
 
@@ -191,12 +193,12 @@ public class Builder : BaseLauncher
 
 		bootImageOptions.IncludeFiles.Add(new IncludeFile("limine.cfg", GetLimineCFG()));
 		bootImageOptions.IncludeFiles.Add(new IncludeFile("limine.sys", GetResource("limine", "limine.sys")));
-		bootImageOptions.IncludeFiles.Add(new IncludeFile(LauncherSettings.OutputFile, "kernel.bin"));
+		bootImageOptions.IncludeFiles.Add(new IncludeFile(MosaSettings.OutputFile, "kernel.bin"));
 		bootImageOptions.IncludeFiles.Add(new IncludeFile("TEST.TXT", Encoding.ASCII.GetBytes("This is a test file.")));
 
-		if (!string.IsNullOrEmpty(LauncherSettings.FileSystemRootInclude))
+		if (!string.IsNullOrEmpty(MosaSettings.FileSystemRootInclude))
 		{
-			var dir = Path.GetFullPath(LauncherSettings.FileSystemRootInclude);
+			var dir = Path.GetFullPath(MosaSettings.FileSystemRootInclude);
 			foreach (var file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories))
 			{
 				var name = Path.GetFileName(file).ToUpper();
@@ -206,28 +208,28 @@ public class Builder : BaseLauncher
 			}
 		}
 
-		bootImageOptions.VolumeLabel = LauncherSettings.OSName;
+		bootImageOptions.VolumeLabel = MosaSettings.OSName;
 		bootImageOptions.DiskImageFileName = imagefile;
-		bootImageOptions.ImageFirmware = LauncherSettings.ImageFirmware switch
+		bootImageOptions.ImageFirmware = MosaSettings.ImageFirmware switch
 		{
 			"bios" => ImageFirmware.Bios,
 			//"uefi" => ImageFirmware.Uefi,
-			_ => throw new NotImplementCompilerException($"Unknown image firmware: {LauncherSettings.ImageFirmware}")
+			_ => throw new NotImplementCompilerException($"Unknown image firmware: {MosaSettings.ImageFirmware}")
 		};
-		bootImageOptions.ImageFormat = LauncherSettings.ImageFormat switch
+		bootImageOptions.ImageFormat = MosaSettings.ImageFormat switch
 		{
 			"img" => ImageFormat.IMG,
 			"vhd" => ImageFormat.VHD,
 			"vdi" => ImageFormat.VDI,
 			"vmdk" => ImageFormat.VMDK,
-			_ => throw new NotImplementCompilerException($"Unknown image format: {LauncherSettings.ImageFormat}")
+			_ => throw new NotImplementCompilerException($"Unknown image format: {MosaSettings.ImageFormat}")
 		};
-		bootImageOptions.FileSystem = LauncherSettings.FileSystem switch
+		bootImageOptions.FileSystem = MosaSettings.FileSystem switch
 		{
 			"fat12" => BootImage.FileSystem.FAT12,
 			"fat16" => BootImage.FileSystem.FAT16,
 			"fat32" => BootImage.FileSystem.FAT32,
-			_ => throw new NotImplementCompilerException($"Unknown file system: {LauncherSettings.FileSystem}")
+			_ => throw new NotImplementCompilerException($"Unknown file system: {MosaSettings.FileSystem}")
 		};
 
 		Generator.Create(bootImageOptions);
@@ -235,38 +237,38 @@ public class Builder : BaseLauncher
 
 	private byte[] GetLimineCFG()
 	{
-		return Encoding.ASCII.GetBytes($"TIMEOUT=0\nINTERFACE_RESOLUTION=640x480\nINTERFACE_BRANDING=Managed Operating System Alliance\n:{LauncherSettings.OSName}\nPROTOCOL={(LauncherSettings.MultibootVersion == "v2" ? "multiboot2" : "multiboot1")}\nKERNEL_PATH=boot:///kernel.bin");
+		return Encoding.ASCII.GetBytes($"TIMEOUT=0\nINTERFACE_RESOLUTION=640x480\nINTERFACE_BRANDING=Managed Operating System Alliance\n:{MosaSettings.OSName}\nPROTOCOL={(MosaSettings.MultibootVersion == "v2" ? "multiboot2" : "multiboot1")}\nKERNEL_PATH=boot:///kernel.bin");
 	}
 
 	private void CreateVMDK(string source)
 	{
-		var arg = $"convert -f raw -O vmdk {Quote(source)} {Quote(LauncherSettings.ImageFile)}";
+		var arg = $"convert -f raw -O vmdk {Quote(source)} {Quote(MosaSettings.ImageFile)}";
 
-		LaunchApplicationWithOutput(LauncherSettings.QemuImg, arg);
+		LaunchApplicationWithOutput(MosaSettings.QemuImgApp, arg);
 	}
 
 	private void CreateVDI(string source)
 	{
-		var arg = $"convert -f raw -O vdi {Quote(source)} {Quote(LauncherSettings.ImageFile)}";
+		var arg = $"convert -f raw -O vdi {Quote(source)} {Quote(MosaSettings.ImageFile)}";
 
-		LaunchApplicationWithOutput(LauncherSettings.QemuImg, arg);
+		LaunchApplicationWithOutput(MosaSettings.QemuImgApp, arg);
 	}
 
 	private void LaunchNDISASM()
 	{
 		//var textSection = Linker.Sections[(int)SectionKind.Text];
-		var startingAddress = LauncherSettings.BaseAddress + MultibootHeaderLength;
+		var startingAddress = MosaSettings.BaseAddress + MultibootHeaderLength;
 		var fileOffset = Linker.BaseFileOffset + MultibootHeaderLength;
 
-		var arg = $"-b 32 -o0x{startingAddress:x} -e0x{fileOffset:x} {Quote(LauncherSettings.OutputFile)}";
+		var arg = $"-b 32 -o0x{startingAddress:x} -e0x{fileOffset:x} {Quote(MosaSettings.OutputFile)}";
 
 		//var nasmfile = Path.Combine(LauncherSettings.ImageFolder, $"{Path.GetFileNameWithoutExtension(LauncherSettings.SourceFiles[0])}.nasm");
 
-		var process = LaunchApplication(LauncherSettings.Ndisasm, arg);
+		var process = LaunchApplication(MosaSettings.NdisasmApp, arg);
 
 		var output = GetOutput(process);
 
-		File.WriteAllText(LauncherSettings.NasmFile, output);
+		File.WriteAllText(MosaSettings.NasmFile, output);
 	}
 
 	private void GenerateASMFile()
@@ -289,17 +291,17 @@ public class Builder : BaseLauncher
 		var fileOffset = Linker.BaseFileOffset + MultibootHeaderLength;
 		var length = textSection.Size;
 
-		var code2 = File.ReadAllBytes(LauncherSettings.OutputFile);
+		var code2 = File.ReadAllBytes(MosaSettings.OutputFile);
 
 		var code = new byte[code2.Length];
 
 		for (ulong i = fileOffset; i < (ulong)code2.Length; i++)
 			code[i - fileOffset] = code2[i];
 
-		var disassembler = new Disassembler.Disassembler(LauncherSettings.Platform);
+		var disassembler = new Disassembler.Disassembler(MosaSettings.Platform);
 		disassembler.SetMemory(code, startingAddress);
 
-		using (var dest = File.CreateText(LauncherSettings.AsmFile))
+		using (var dest = File.CreateText(MosaSettings.AsmFile))
 		{
 			foreach (var instruction in disassembler.Decode())
 			{

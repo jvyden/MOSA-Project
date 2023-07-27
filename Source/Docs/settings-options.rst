@@ -57,7 +57,7 @@ Linker Settings
     Linker.Format,Type of ELF object file elf32 or elf64
     Linker.Symbols,"If true, emits the symbols into the object  file"
     Linker.StaticRelocations,"If true, emits static relocation information into the object file"
-    Linker.Drawf,"If true, emits DWARF debug information into the object file"
+    Linker.Dwarf,"If true, emits DWARF debug information into the object file"
     Linker.ShortSymbolNames,"If true, emits short symbol names into the object file"
     Linker.CustomSections.{Name}.SectionName,Emits a custom linker section with this section name
     Linker.CustomSections.{Name}.SourceFile,Emits a custom linker section using the specific file
@@ -124,8 +124,9 @@ Launcher Settings
     Launcher.Exit,"If true, exit immediately after launch"
     Launcher.PlugKorlib,"If true, automatically include the plugs for CoreLib"
     Launcher.GDB,"If true, launch the GNU GDB application after VM launch"
+	Launcher.Serial,"If true, outputs the serial data"
     Launcher.Debugger,"If true, launch the MOSA debugger application after VM launch"
-    Launcher.Test,"If true, monitors VM serial for success or failure messages"	
+    Launcher.Test,"If true, monitors VM serial for success or failure messages"
 
 Image Settings
 --------------
@@ -151,6 +152,7 @@ Emulator Settings
     Emulator.Memory,Amount of memory for the virtual machine in MB
     Emulator.Display,"If true, show the video display"
 	Emulator.SVGA,"SVGA mode: std, cirrus, vbe, virtio or vmware"
+	Emulator.MaxRuntime,Maximum runtime of the virtual machine in seconds (future)
     Emulator.GDB,"If true, enables GDB within emulator"
     Emulator.Serial,"Serial Emulation type None, Pipe, TCPServer, TCPClient"
     Emulator.Serial.Host,Serial Host Name or IP address
