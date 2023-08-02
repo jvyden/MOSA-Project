@@ -43,7 +43,9 @@ public class BootPageAllocator
 
 		UsedPages += pages;
 
-		Debug.WriteLine(" * Boot Page Allocated @ ", new Hex(result));
+		Page.ClearPage(result);
+
+		Debug.WriteLine(" > Boot Page Allocated @ ", new Hex(result));
 
 		// TODO: Release lock
 

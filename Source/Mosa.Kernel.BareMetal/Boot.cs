@@ -18,131 +18,119 @@ public static class Boot
 
 		BootStatus.Initalize();
 
-		Console.SetBackground(ConsoleColor.Black);
-		Console.ClearScreen();
+		ScreenConsole.SetBackground(ScreenColor.Black);
+		ScreenConsole.ClearScreen();
 
-		Console.WriteLine(ConsoleColor.BrightYellow, "MOSA BareMetal v0.1");
+		ScreenConsole.WriteLine(ScreenColor.BrightYellow, "MOSA BareMetal v0.1");
 
-		Console.WriteLine();
+		ScreenConsole.WriteLine();
 
-		Console.WriteLine(ConsoleColor.BrightYellow, "Initializing kernel...");
+		ScreenConsole.WriteLine(ScreenColor.BrightYellow, "Initializing kernel...");
 		Debug.Setup(true);
 
-		Console.Write(ConsoleColor.BrightGreen, "> Initial garbage collection...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Initial garbage collection...");
 		InitialGCMemory.Initialize();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Platform initialization...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Platform initialization...");
 		Platform.EntryPoint();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 	}
 
 	[Plug("Mosa.Runtime.StartUp::KernelEntryPoint")]
 	public static void EntryPoint()
 	{
-		Debug.WriteLine("[Entry Point]");
+		Debug.WriteLine("[Kernel Entry Point]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Enabling debug logging...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Enabling debug logging...");
 		Debug.Setup(true);
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Boot page allocator...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Boot page allocator...");
 		BootPageAllocator.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Memory map...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Memory map...");
 		BootMemoryMap.Setup();
 		BootMemoryMap.Dump();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Physical page allocator...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Physical page allocator...");
 		PageFrameAllocator.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Page table...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Page table...");
 		PageTable.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Virtual page allocator...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Virtual page allocator...");
 		VirtualPageAllocator.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Interrupt Manager...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Interrupt Manager...");
 		InterreuptManager.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Garbage collection...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Garbage collection...");
 		GCMemory.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-		Console.Write(ConsoleColor.BrightGreen, "> Interrupt Handler...");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Interrupt Handler...");
 		InterreuptManager.SetHandler(null);
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Virtual memory allocator...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Virtual memory allocator...");
 		VirtualMemoryAllocator.Setup();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
 		//Console.Write(ConsoleColor.BrightGreen, "> Scheduler...");
 		//Scheduler.Setup();
 		//Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
 
-		Console.WriteLine();
-		Console.WriteLine(ConsoleColor.BrightYellow, "Initializing services...");
-
-		Console.Write(ConsoleColor.BrightGreen, "> Service Manager...");
-		var serviceManager = new ServiceManager();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> Disk Device Service...");
-		var diskDeviceService = new DiskDeviceService();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> Partition Service...");
-		var partitionService = new PartitionService();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> PCI Controller Service...");
-		var pciControllerService = new PCIControllerService();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> PCI Device Service...");
-		var pciDeviceService = new PCIDeviceService();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> PC Service...");
-		var pcService = new PCService();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> Device Manager...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Hardware abstraction layer...");
+		var hardware = new HardwareAbstractionLayer();
 		var deviceService = new DeviceService();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> Initializing hardware abstraction layer...");
-		var hardware = new HAL.Hardware();
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
-
-		Console.Write(ConsoleColor.BrightGreen, "> Intalizing device system...");
 		DeviceSystem.Setup.Initialize(hardware, deviceService.ProcessInterrupt);
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> Registering device drivers...");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Registering device drivers...");
 		deviceService.RegisterDeviceDriver(DeviceDriver.Setup.GetDeviceDriverRegistryEntries());
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Debug.WriteLine("[System]");
+		ScreenConsole.WriteLine();
+		ScreenConsole.WriteLine(ScreenColor.BrightYellow, "Initializing services...");
 
-		var system = new X86System();
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Service Manager...");
+		var serviceManager = new ServiceManager();
+		Kernel.ServiceManger = serviceManager;
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Debug.WriteLine("Name: ");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Device Service...");
+		serviceManager.AddService(deviceService);
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.WriteLine(system.Device.Name);
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Disk Device Service...");
+		serviceManager.AddService(new DiskDeviceService());
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Console.Write(ConsoleColor.BrightGreen, "> X86System...");
-		deviceService.Initialize(system, null);
-		Console.WriteLine(ConsoleColor.BrightBlack, " [Completed]");
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> Partition Service...");
+		serviceManager.AddService(new PartitionService());
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 
-		Debug.WriteLine("Done");
-		Debug.Kill();
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> PCI Controller Service...");
+		serviceManager.AddService(new PCIControllerService());
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
+
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> PCI Device Service...");
+		serviceManager.AddService(new PCIDeviceService());
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
+
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> PC Service...");
+		serviceManager.AddService(new PCService());
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
+
+		ScreenConsole.Write(ScreenColor.BrightGreen, "> X86System...");
+		deviceService.Initialize(new X86System(), null);
+		ScreenConsole.WriteLine(ScreenColor.BrightBlack, " [Completed]");
 	}
 
 	[Plug("Mosa.Runtime.GC::AllocateMemory")]

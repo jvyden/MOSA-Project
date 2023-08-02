@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using Mosa.Compiler.Common.Configuration;
 
 namespace Mosa.Utility.Configuration;
 
@@ -17,7 +16,10 @@ public static class AppLocationsSettings
 	private static readonly string AppDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
 	private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-	private static readonly string[] LinuxDirectories = new string[] { "/bin", "/usr/bin" };
+	private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+	private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
+	private static readonly string[] LinuxDirectories = new string[] { "/bin", "/usr/bin", "/opt/homebrew/bin", "/usr/local/bin/", "/usr/local/Cellar" };
 
 	public static void GetAppLocations(MosaSettings mosaSettings)
 	{
@@ -34,12 +36,13 @@ public static class AppLocationsSettings
 		mosaSettings.NdisasmApp = FindNdisasm();
 		mosaSettings.MkisofsApp = FindMkisofs();
 		mosaSettings.GDBApp = FindGDB();
+		mosaSettings.GraphwizApp = FindGraphwiz();
 	}
 
 	private static string FindQemu()
 	{
-		return IsWindows
-			? TryFind("qemu-system-i386.exe",
+		return
+			IsWindows ? TryFind("qemu-system-i386.exe",
 				new string[] {
 					@"%CURRENT%\qemu",
 					@"%CURRENT%\..\Tools\qemu",
@@ -57,8 +60,8 @@ public static class AppLocationsSettings
 
 	private static string FindGDB()
 	{
-		return IsWindows
-			? TryFind("gdb.exe",
+		return
+			IsWindows ? TryFind("gdb.exe",
 				new string[] {
 					@"%CURRENT%\..\Tools\gdb",
 					@"%CURRENT%\Tools\gdb",
@@ -77,8 +80,8 @@ public static class AppLocationsSettings
 
 	private static string FindMkisofs()
 	{
-		return IsWindows
-			? TryFind("mkisofs.exe",
+		return
+			IsWindows ? TryFind("mkisofs.exe",
 				new string[] {
 					@"%CURRENT%\..\Tools\mkisofs",
 					@"%CURRENT%\Tools\mkisofs",
@@ -96,8 +99,8 @@ public static class AppLocationsSettings
 
 	private static string FindNdisasm()
 	{
-		return IsWindows
-			? TryFind("ndisasm.exe",
+		return
+			IsWindows ? TryFind("ndisasm.exe",
 				new string[] {
 					@"%CURRENT%\..\Tools\ndisasm",
 					@"%CURRENT%\Tools\ndisasm",
@@ -110,8 +113,8 @@ public static class AppLocationsSettings
 
 	private static string FindVmwarePlayer()
 	{
-		return IsWindows
-			? TryFind("vmplayer.exe",
+		return
+			IsWindows ? TryFind("vmplayer.exe",
 				new string[] {
 					@"%ProgramFiles%\VMware\VMware Player",
 					@"%ProgramFiles(x86)%\VMware\VMware Player",
@@ -121,8 +124,8 @@ public static class AppLocationsSettings
 
 	private static string FindVmwareWorkstation()
 	{
-		return IsWindows
-			? TryFind("vmware.exe",
+		return
+			IsWindows ? TryFind("vmware.exe",
 				new string[] {
 					@"%ProgramFiles%\VMware\VMware Workstation",
 					@"%ProgramFiles(x86)%\VMware\VMware Workstation",
@@ -132,8 +135,8 @@ public static class AppLocationsSettings
 
 	private static string FindVirtualBox()
 	{
-		return IsWindows
-			? TryFind("VBoxManage.exe",
+		return
+			IsWindows ? TryFind("VBoxManage.exe",
 				new string[] {
 					@"%ProgramFiles%\Oracle",
 					@"%ProgramFiles(x86)%\Oracle",
@@ -143,8 +146,8 @@ public static class AppLocationsSettings
 
 	private static string FindBochs()
 	{
-		return IsWindows
-			? TryFind("bochs.exe",
+		return
+			IsWindows ? TryFind("bochs.exe",
 				new string[] {
 					@"%ProgramFiles%\Bochs-2.6.9",
 					@"%ProgramFiles(x86)%\Bochs-2.6.9",
@@ -168,8 +171,8 @@ public static class AppLocationsSettings
 
 	private static string FindQemuImg()
 	{
-		return IsWindows
-			? TryFind("qemu-img.exe",
+		return
+			IsWindows ? TryFind("qemu-img.exe",
 				new string[]
 				{
 					@"%CURRENT%\..\Tools\qemu",
@@ -188,8 +191,7 @@ public static class AppLocationsSettings
 	private static string FindQemuBIOS()
 	{
 		return Path.GetDirectoryName(
-			IsWindows
-				? TryFind("bios.bin",
+			IsWindows ? TryFind("bios.bin",
 					new string[] {
 						@"%CURRENT%\..\Tools\qemu\share",
 						@"%CURRENT%\Tools\qemu\share",
@@ -205,15 +207,16 @@ public static class AppLocationsSettings
 				: TryFind("bios.bin",
 					new string[] {
 						"/usr/share/qemu",
-						"/usr/share/seabios"
+						"/usr/share/seabios",
+						"/opt/homebrew/share/qemu/"
 					})
 		);
 	}
 
 	private static string FindQemuEDK2X86()
 	{
-		return IsWindows
-			? TryFind("edk2-i386-code.fd",
+		return
+			IsWindows ? TryFind("edk2-i386-code.fd",
 				new string[] {
 					@"%CURRENT%\..\Tools\qemu\share",
 					@"%CURRENT%\Tools\qemu\share",
@@ -230,14 +233,15 @@ public static class AppLocationsSettings
 				new string[] {
 					"/usr/share/qemu",
 					"/usr/share/ovmf",
-					"/usr/share/OVMF"
+					"/usr/share/OVMF",
+					"/opt/homebrew/share/qemu/"
 				});
 	}
 
 	private static string FindQemuEDK2X64()
 	{
-		return IsWindows
-			? TryFind("edk2-x86_64-code.fd",
+		return
+			IsWindows ? TryFind("edk2-x86_64-code.fd",
 				new string[] {
 					@"%CURRENT%\..\Tools\qemu\share",
 					@"%CURRENT%\Tools\qemu\share",
@@ -254,14 +258,15 @@ public static class AppLocationsSettings
 				new string[] {
 					"/usr/share/qemu",
 					"/usr/share/ovmf",
-					"/usr/share/OVMF"
+					"/usr/share/OVMF",
+					"/opt/homebrew/share/qemu/"
 				});
 	}
 
 	private static string FindQemuEDK2ARM()
 	{
-		return IsWindows
-			? TryFind("edk2-arm-code.fd",
+		return
+			IsWindows ? TryFind("edk2-arm-code.fd",
 				new string[] {
 					@"%CURRENT%\..\Tools\qemu\share",
 					@"%CURRENT%\Tools\qemu\share",
@@ -274,12 +279,25 @@ public static class AppLocationsSettings
 					@"%ProgramFiles(x86)%\qemu",
 					@"%ProgramFiles(x86)%\qemu\share"
 				})
+			: IsOSX ? TryFind("edk2-x86_64-code.fd", "/opt/homebrew/bin/qemu-system-i386")
 			: TryFind("edk2-x86_64-code.fd",
 				new string[] {
 					"/usr/share/qemu",
 					"/usr/share/ovmf",
-					"/usr/share/OVMF"
+					"/usr/share/OVMF",
+					"/opt/homebrew/share/qemu/"
 				});
+	}
+
+	private static string FindGraphwiz()
+	{
+		return
+			IsWindows ? TryFind("dot.exe",
+				new string[] {
+					@"%ProgramFiles%\Graphviz\bin",
+					@"%ProgramFiles(x86)%\Graphviz\bin",
+				})
+			: TryFind("dot", LinuxDirectories);
 	}
 
 	public static string ReplaceWithParameters(string directory)
@@ -325,11 +343,24 @@ public static class AppLocationsSettings
 				var location = SearchSubdirectories(dir, file);
 
 				if (location != null)
-				{
 					return location;
-				}
 			}
 		}
+
+		return null;
+	}
+
+	private static string TryFind(string file, string searchdirectory)
+	{
+		var dir = ReplaceWithParameters(searchdirectory);
+
+		if (dir == null)
+			return null;
+
+		var location = SearchSubdirectories(dir, file);
+
+		if (location != null)
+			return location;
 
 		return null;
 	}

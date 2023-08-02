@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using Mosa.Compiler.Common;
-using Mosa.Compiler.Common.Configuration;
 using Mosa.Compiler.Framework;
 using Mosa.Compiler.Framework.CompilerStages;
 using Mosa.Compiler.Framework.Trace;
@@ -64,6 +64,8 @@ public partial class MainForm : Form
 
 	private Stopwatch Stopwatch = new Stopwatch();
 
+	private bool GraphwizFound = false;
+
 	public MainForm()
 	{
 		InitializeComponent();
@@ -83,6 +85,7 @@ public partial class MainForm : Form
 		ClearAll();
 
 		RegisterPlatforms();
+
 
 		Stopwatch.Restart();
 	}
@@ -105,7 +108,11 @@ public partial class MainForm : Form
 	{
 		MosaSettings.SetDetfaultSettings();
 		MosaSettings.LoadArguments(args);
+		MosaSettings.LoadAppLocations();
+
 		SetRequiredSettings();
+
+		GraphwizFound = File.Exists(MosaSettings.GraphwizApp);
 
 		UpdateDisplay();
 	}
@@ -406,6 +413,8 @@ public partial class MainForm : Form
 		SetTranformationStep(0);
 
 		cbTransformLabels_SelectedIndexChanged(null, null);
+
+		PopulateTransformList();
 	}
 
 	private void ClearAll()
@@ -572,7 +581,7 @@ public partial class MainForm : Form
 		if (CurrentMethodData == null)
 			return null;
 
-		string stage = GetCurrentDebugStage();
+		var stage = GetCurrentDebugStage();
 
 		return CurrentMethodData.DebugLogs[stage];
 	}
@@ -1010,6 +1019,8 @@ public partial class MainForm : Form
 			return;
 
 		tbDebugResult.Text = CreateText(lines);
+
+		UpdateGraphviz();
 	}
 
 	private void UpdateDebugStages()
@@ -1057,6 +1068,9 @@ public partial class MainForm : Form
 			"armv8a32" => 2,
 			_ => cbPlatform.SelectedIndex
 		};
+
+		cbGraphviz.Checked = GraphwizFound;
+		cbGraphviz.Enabled = GraphwizFound;
 	}
 
 	private void UpdateInstructionLabels()
@@ -1264,5 +1278,175 @@ public partial class MainForm : Form
 		{
 			OpenFile();
 		}
+	}
+
+	private bool DisplayGraphviz()
+	{
+		panel1.Controls.Clear();
+
+		if (!GraphwizFound)
+			return false;
+
+		if (!cbGraphviz.Checked)
+			return false;
+
+		if (!tbDebugResult.Text.Contains("digraph blocks"))
+			return false;
+
+		var dot = Path.GetTempFileName();
+		var bmp = Path.GetTempFileName();
+
+		try
+		{
+			File.WriteAllText(dot, tbDebugResult.Text);
+
+			var process = new Process();
+
+			process.StartInfo.FileName = MosaSettings.GraphwizApp;
+			process.StartInfo.Arguments = $"dot -Tbmp -o \"{bmp}\" \"{dot}\"";
+			process.StartInfo.CreateNoWindow = true;
+
+			process.Start();
+			process.WaitForExit();
+
+			var file = File.ReadAllBytes(bmp);
+
+			using var stream = new MemoryStream(file);
+			var bitmap = new Bitmap(stream);
+
+			var picture = new PictureBox();
+			panel1.Controls.Add(picture);
+
+			picture.Size = bitmap.Size;
+			picture.SizeMode = PictureBoxSizeMode.AutoSize;
+			picture.Image = bitmap;
+			picture.BorderStyle = BorderStyle.None;
+			picture.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom | AnchorStyles.Top;
+
+			panel1.AutoScrollMinSize = bitmap.Size;
+		}
+		finally
+		{
+			File.Delete(dot);
+			File.Delete(bmp);
+		}
+
+		return true;
+	}
+
+	private void UpdateGraphviz()
+	{
+		var graphviz = DisplayGraphviz();
+
+		panel1.Visible = graphviz;
+		tbDebugResult.Visible = !graphviz;
+	}
+
+	private void cbGraphviz_CheckedChanged(object sender, EventArgs e)
+	{
+		UpdateGraphviz();
+	}
+
+	private class TranformEntry
+	{
+		public int ID { get; set; }
+
+		public string Name { get; set; }
+
+		public string Before { get; set; }
+
+		public string After { get; set; }
+
+		public string Block { get; set; }
+
+		public int Pass { get; set; }
+	}
+
+	private void PopulateTransformList()
+	{
+		dataGridView1.DataSource = null;
+
+		if (CurrentMethodData == null)
+			return;
+
+		var stage = GetCurrentTransformStage();
+		var debug = CurrentMethodData.DebugLogs[stage];
+
+		if (debug.Contains("*** Pass"))
+			return;
+
+		var list = new List<TranformEntry>();
+		//{
+		//	new TranformEntry() { ID = -1, Name = "***Start***" }
+		//};
+
+		var pass = 0;
+		TranformEntry entry = null;
+
+		foreach (var line in debug)
+		{
+			if (string.IsNullOrEmpty(line))
+				continue;
+
+			if (line.StartsWith("*** Pass"))
+			{
+				pass = Convert.ToInt32(line[10..]);
+				continue;
+			}
+
+			if (line.StartsWith("Merge Blocking: ") || line.StartsWith("Removed Unreachable Block:"))
+				continue;
+
+			var parts = line.Split('\t');
+
+			if (parts.Length != 2)
+				continue;
+
+			var part1 = parts[1].Substring(1).Trim();
+
+			if (parts[0].StartsWith("L_"))
+			{
+				entry.Block = parts[0].TrimEnd();
+				entry.Before = part1;
+				continue;
+			}
+
+			if (parts[0].StartsWith(" "))
+			{
+				entry.After = part1;
+				continue;
+			}
+
+			entry = new TranformEntry();
+
+			entry.ID = Convert.ToInt32(parts[0].Trim());
+			entry.Name = part1;
+			entry.Pass = pass;
+
+			list.Add(entry);
+		}
+
+		dataGridView1.DataSource = list;
+		dataGridView1.AutoResizeColumns();
+	}
+
+	private void dataGridView1_SelectionChanged(object sender, EventArgs e)
+	{
+		if (dataGridView1.CurrentCell == null)
+			return;
+
+		var entry = dataGridView1.CurrentCell.OwningRow.DataBoundItem as TranformEntry;
+
+		if (cbSetBlock.Checked && !string.IsNullOrEmpty(entry.Block))
+		{
+			cbTransformLabels.SelectedItem = entry.Block;
+		}
+
+		SetTranformationStep(entry.ID);
+	}
+
+	private void cbSetBlock_CheckedChanged(object sender, EventArgs e)
+	{
+		dataGridView1_SelectionChanged(sender, e);
 	}
 }
