@@ -10,21 +10,22 @@ public readonly struct ConsoleKeyInfo : IEquatable<ConsoleKeyInfo>
         this.KeyChar = keyChar;
         this.Key = key;
 
-        this.Shift = shift;
-        this.Alt = alt;
-        this.Control = control;
+        ConsoleModifiers modifiers = ConsoleModifiers.None;
+
+        if (shift) modifiers |= ConsoleModifiers.Shift;
+        if (alt) modifiers |= ConsoleModifiers.Alt;
+        if (control) modifiers |= ConsoleModifiers.Control;
+
+        this.Modifiers = modifiers;
     }
 
     public readonly char KeyChar;
     public readonly ConsoleKey Key;
-
-    public readonly bool Shift;
-    public readonly bool Alt;
-    public readonly bool Control;
+    public readonly ConsoleModifiers Modifiers;
 
     public bool Equals(ConsoleKeyInfo other)
     {
-	    return this.KeyChar == other.KeyChar && this.Key == other.Key && this.Shift == other.Shift && this.Alt == other.Alt && this.Control == other.Control;
+	    return this.KeyChar == other.KeyChar && this.Key == other.Key && this.Modifiers == other.Modifiers;
     }
 
     public override bool Equals(object obj)
